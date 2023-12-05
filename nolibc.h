@@ -50,24 +50,41 @@ exit(int x)
 	: "a0", "a7");
 }
 
+volatile unsigned int *const ttyS0 = (unsigned int *const)0x91400000;
+
+#define UART8250_RX  0
+#define UART8250_TX  0
+#define UART8250_LCR 3
+#define UART8250_LSR 5
+
+#define UART8250_LCR_DLAB 0x80
+
+#define UART8250_LSR_DATA 0x01
+#define UART8250_LSR_TXRDY 0x20
+
+void uart_init() {
+    // set DLAB = 0
+    ttyS0[UART8250_LCR] &= ~UART8250_LCR_DLAB;
+}
+
+void uart_put_c(char c) {
+    while ((ttyS0[UART8250_LSR] & UART8250_LSR_TXRDY) == 0);
+    ttyS0[UART8250_TX] = c;
+}
+
 static void
 memwrite(void const *ptr, size_t len)
 {
-	__asm volatile(
-		"li a0, 1\n"
-		"mv a1, %0\n"
-		"mv a2, %1\n"
-		"li a7, 64\n"
-		"ecall\n"
-	:
-	: "r"(ptr), "r"(len)
-	: "a0", "a1", "a2", "a7"
-	);
+	char const *c = ptr;
+	for (size_t i = 0; i < len; ++i)
+		uart_put_c(c[i]);
 }
 
 int main(void);
 
-void _start(void) {
+void c_start(void) {
+	uart_init();
+	memwrite("uart debug!\r\n", 13);
 	int x = main();
 	flush();
 	exit(x);

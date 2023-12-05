@@ -4,8 +4,8 @@ include ../../config.mk
 
 all: rvv-1.0
 
-rvv-1.0: main.S main.c config.h
-	${CC} ${CFLAGS} main.S main.c -o $@
+rvv-1.0: ../../bench/start.S main.S main.c config.h
+	${CC} ${CFLAGS} ../../bench/start.S main.S main.c -o $@
 
 clean:
 	rm -f rvv-1.0
